@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学位课均分与绩点计算器 · 南通大学杏林学院</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f4f5f7; color: #1f2328;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 64px; }
+  h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: .3px; }
+  .sub { color: #6b7280; margin: 0; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px 18px 16px; margin-top: 16px; }
+  .card > h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .hint { color: #6b7280; font-size: 12.5px; margin: 0; }
+
+  .banner {
+    background: #fff8e6; border: 1px solid #f5dfa8; color: #8a6100;
+    border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-top: 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+
+  .rule {
+    background: #f0f6ff; border: 1px solid #cfe0fb; border-radius: 10px;
+    padding: 12px 14px; font-size: 12.5px; color: #274b8a;
+  }
+  .rule b { color: #1d4ed8; }
+  .rule table { min-width: 0; width: auto; margin-top: 8px; }
+  .rule th, .rule td { border: none; border-bottom: 1px solid #dbe7fa; padding: 3px 14px 3px 0; font-size: 12.5px; color: #274b8a; }
+  .rule th { background: none; font-weight: 600; }
+
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .mode {
+    border: 1px solid #d8dbe0; background: #fff; border-radius: 999px;
+    padding: 6px 14px; cursor: pointer; font-size: 13px; color: #374151; transition: all .15s;
+  }
+  .mode:hover { border-color: #b9c0c9; }
+  .mode.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+  .inline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  .inline label { color: #4b5563; font-size: 13px; }
+  input[type=number], input[type=text] {
+    border: 1px solid #d1d5db; border-radius: 7px; padding: 6px 9px; font-size: 13px;
+    font-family: inherit; color: #1f2328; background: #fff; outline: none;
+  }
+  input[type=number]:focus, input[type=text]:focus, textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  input[type=number] { width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+  textarea {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px 12px;
+    font-family: ui-monospace, Consolas, "Courier New", monospace; font-size: 12.5px;
+    line-height: 1.7; color: #1f2328; outline: none; resize: vertical;
+  }
+  .chk { display: inline-flex; align-items: center; gap: 6px; color: #4b5563; font-size: 13px; cursor: pointer; }
+  .chk input { width: 15px; height: 15px; accent-color: #2563eb; }
+
+  .btn {
+    border: 1px solid #d1d5db; background: #fff; border-radius: 8px; padding: 7px 14px;
+    font-size: 13px; cursor: pointer; color: #374151; font-family: inherit; transition: all .15s;
+  }
+  .btn:hover { background: #f3f4f6; }
+  .btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .btn.primary:hover { background: #1d4ed8; }
+
+  details > summary { cursor: pointer; color: #4b5563; font-size: 13px; user-select: none; }
+  details > summary:hover { color: #1d4ed8; }
+  details[open] > summary { margin-bottom: 10px; }
+
+  .tablewrap { overflow-x: auto; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; min-width: 820px; }
+  th, td { border-bottom: 1px solid #eef0f3; padding: 7px 8px; text-align: left; font-size: 13px; vertical-align: top; }
+  th { background: #f9fafb; font-weight: 600; color: #4b5563; white-space: nowrap; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.mono { font-variant-numeric: tabular-nums; color: #4b5563; }
+  tbody tr:hover { background: #fbfcfd; }
+  tbody tr.off { opacity: .42; }
+  td input[type=text] { width: 100%; min-width: 120px; }
+  td input[type=number] { width: 100%; min-width: 62px; }
+  td .gpinput { min-width: 74px; text-align: right; font-variant-numeric: tabular-nums; }
+  td .gpinput.manual { border-color: #f0b429; background: #fffaf0; }
+  .conv { display: block; font-size: 11px; color: #b45309; font-weight: 400; margin-top: 2px; }
+  .conv.lv { color: #b45309; }
+  .del {
+    border: none; background: none; color: #b91c1c; cursor: pointer; font-size: 12.5px;
+    padding: 4px 6px; border-radius: 6px;
+  }
+  .del:hover { background: #fee2e2; }
+
+  tfoot td { border-bottom: none; border-top: 2px solid #e5e7eb; font-weight: 600; color: #1f2328; padding-top: 10px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; }
+  .stat .k { color: #6b7280; font-size: 12.5px; margin-bottom: 6px; }
+  .stat .v {
+    font-size: 30px; font-weight: 650; letter-spacing: -.5px; color: #111827;
+    font-variant-numeric: tabular-nums; line-height: 1.15;
+  }
+  .stat.hl { border-color: #bfdbfe; background: linear-gradient(180deg, #f5f9ff, #fff); }
+  .stat.hl .v { color: #1d4ed8; }
+  .stat .u { font-size: 14px; color: #9ca3af; font-weight: 500; margin-left: 4px; }
+  .stat .fmt { font-size: 11.5px; color: #9ca3af; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  .note { margin-top: 14px; color: #6b7280; font-size: 12.5px; }
+  .note b { color: #374151; font-weight: 600; }
+  code {
+    background: #f3f4f6; border: 1px solid #e8eaee; border-radius: 5px;
+    padding: 1px 5px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: #b91c1c;
+  }
+  .status { font-size: 12.5px; color: #6b7280; }
+  .warn { color: #b45309; }
+  @media (max-width: 720px) { .stats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>学位课均分与绩点计算器</h1>
+  <p class="sub">均分 = Σ(成绩 × 学分) ÷ Σ学分 ｜ 绩点 = Σ(单科绩点 × 学分) ÷ Σ学分</p>
+
+  <div class="banner" id="banner">
+    <span>表格里是<strong>示例数据</strong>（含一门等级制课程「集成电路概论 / 良好」示范折算），学分是瞎填的，看完点「清空重填」录你自己的。</span>
+    <button class="btn" id="btnClear">清空重填</button>
+  </div>
+
+  <!-- 学校规则 -->
+  <section class="card">
+    <h2>0. 南通大学杏林学院官方规则</h2>
+    <div class="rule">
+      <div><b>百分制课程绩点 = (成绩 − 50) ÷ 10</b>，即 60 分 = 1.0 分绩点、每多 1 分 +0.1，满分 100 = 5.0。</div>
+      <div style="margin-top:8px"><b>五级记分（等级制）折算：</b>等级课没有具体分数，学校规定按下表折算成百分制再计入均分。</div>
+      <table>
+        <tr><th>五级记分</th><th>折算百分制</th><th>绩点</th><th>对应百分制区间</th></tr>
+        <tr><td>优秀</td><td>95 分</td><td>4.5</td><td>90～100</td></tr>
+        <tr><td>良好</td><td><b>85 分</b></td><td><b>3.5</b></td><td>80～89</td></tr>
+        <tr><td>中等</td><td>75 分</td><td>2.5</td><td>70～79</td></tr>
+        <tr><td>及格</td><td>65 分</td><td>1.5</td><td>60～69</td></tr>
+        <tr><td>不及格</td><td>50 分</td><td>0</td><td>&lt; 60</td></tr>
+      </table>
+      <div style="margin-top:8px">来源：《南通大学杏林学院 2026 届毕业班学位课程设置与说明》《南通大学全日制普通本科生学籍管理规定》第二十三条。</div>
+    </div>
+    <p class="hint" style="margin-top:12px">
+      <b style="color:#b45309">补考提醒：</b>成绩不及格后补考通过的课程，绩点<b>不看实际分数</b>——百分制课程记 <code>1.0</code>、五级记分课程记 <code>1.5</code>，补考仍不及格记 0。这类课请在第 5 列直接改绩点（改过的格子会变黄）。
+    </p>
+    <details style="margin-top:12px">
+      <summary>等级折算标准对不上？点开改（每行：<code>等级=折算分=绩点</code>）</summary>
+      <textarea id="levelText" rows="6"></textarea>
+      <p class="status" id="levelStatus" style="margin-top:8px"></p>
+    </details>
+  </section>
+
+  <!-- 设置 -->
+  <section class="card">
+    <h2>1. 百分制课程的绩点换算方式</h2>
+    <div class="modes" id="modes">
+      <button class="mode on" data-mode="linear">线性公式（通大就是这种）</button>
+      <button class="mode" data-mode="segment">分段映射</button>
+      <button class="mode" data-mode="manual">直接填单科绩点</button>
+    </div>
+    <p class="hint" id="modeHint"></p>
+
+    <div class="inline" id="linearBox">
+      <label>绩点 = (成绩 −</label>
+      <input type="number" id="pa" value="50" step="0.1">
+      <label>) ÷</label>
+      <input type="number" id="pb" value="10" step="0.1">
+      <span class="status" id="linearPreview"></span>
+    </div>
+
+    <div id="segmentBox" style="display:none;margin-top:14px">
+      <p class="hint" style="margin-bottom:8px">每行一条，格式 <code>最低分数=绩点</code>，取「成绩 ≥ 最低分」中条件最高的一档。</p>
+      <textarea id="segText" rows="10"></textarea>
+      <p class="status" id="segStatus" style="margin-top:8px"></p>
+    </div>
+
+    <div class="inline" style="margin-top:14px">
+      <label class="chk"><input type="checkbox" id="zeroUnder" checked> 60 分以下不计绩点（记 0）</label>
+      <button class="btn" id="btnRecalc">重算全部绩点（清掉手改的值）</button>
+    </div>
+  </section>
+
+  <!-- 课程表 -->
+  <section class="card">
+    <h2>2. 课程数据</h2>
+    <p class="hint" style="margin-bottom:10px">
+      第 4 列「成绩」可以直接写数字，也可以写等级：<code>优秀 / 良好 / 中等 / 及格 / 不及格</code>（也认「优、良、合格、不合格」），写等级会自动按上表折算。
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:44px">计入</th>
+            <th>课程名称</th>
+            <th class="num" style="width:88px">学分</th>
+            <th class="num" style="width:118px">成绩</th>
+            <th class="num" style="width:120px">单科绩点</th>
+            <th class="num" style="width:104px">学分×成绩</th>
+            <th class="num" style="width:104px">学分×绩点</th>
+            <th style="width:56px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">合计</td>
+            <td class="num" id="fCredit">0</td>
+            <td></td>
+            <td></td>
+            <td class="num" id="fScore">0</td>
+            <td class="num" id="fGP">0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="inline" style="margin-top:12px">
+      <button class="btn primary" id="btnAdd">+ 添加一行</button>
+    </div>
+
+    <div style="margin-top:18px">
+      <p class="hint" style="margin-bottom:8px">批量粘贴（从 Excel / WPS 直接复制整列，每行一门课，格式：<code>课程名 学分 成绩</code>，成绩可以是数字也可以是等级，分隔符用制表符、逗号或空格都行）：</p>
+      <textarea id="pasteBox" rows="4" placeholder="集成电路概论	3	良好&#10;高等数学	5	88&#10;数据结构	4	92"></textarea>
+      <div class="inline" style="margin-top:10px">
+        <button class="btn" id="btnImport">导入并替换表格</button>
+        <button class="btn" id="btnAppend">追加到表格</button>
+        <span class="status" id="importStatus"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 结果 -->
+  <section style="margin-top:16px">
+    <div class="stats">
+      <div class="stat">
+        <div class="k">总学分</div>
+        <div class="v"><span id="rCredit">0</span><span class="u">学分</span></div>
+      </div>
+      <div class="stat hl">
+        <div class="k">学分加权均分</div>
+        <div class="v" id="rAvg">0.00</div>
+        <div class="fmt" id="rAvgRaw"></div>
+      </div>
+      <div class="stat hl">
+        <div class="k">平均学分绩点（GPA）</div>
+        <div class="v" id="rGPA">0.00</div>
+        <div class="fmt" id="rGPARaw"></div>
+      </div>
+    </div>
+    <p class="note" id="formulaNote"></p>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "degree-gpa-calc-v2";
+  var DEFAULT_SEG = "90=4.0\n85=3.7\n82=3.3\n78=3.0\n75=2.7\n72=2.3\n68=2.0\n64=1.5\n60=1.0\n0=0";
+  /* 南通大学杏林学院五级记分折算标准：等级=折算百分制=绩点 */
+  var DEFAULT_LEVEL = "优秀=95=4.5\n良好=85=3.5\n中等=75=2.5\n及格=65=1.5\n不及格=50=0";
+  /* 常见别名 → 标准等级名 */
+  var ALIAS = {
+    "优": "优秀", "优良": "优秀",
+    "良": "良好", "较好": "良好",
+    "中": "中等", "一般": "中等",
+    "合格": "及格", "通过": "及格", "及": "及格",
+    "不合格": "不及格", "不通过": "不及格", "未通过": "不及格", "差": "不及格"
+  };
+
+  var state = {
+    mode: "linear",
+    pa: 50,
+    pb: 10,
+    zeroUnder: true,
+    segText: DEFAULT_SEG,
+    levelText: DEFAULT_LEVEL,
+    uni: "南通大学杏林学院",
+    rows: []
+  };
+
+  var SAMPLE = [
+    { on: true, name: "集成电路概论（示例）", credit: 3, score: "良好", gp: null, gpManual: false },
+    { on: true, name: "高等数学（示例）", credit: 5, score: "88", gp: null, gpManual: false },
+    { on: true, name: "数据结构（示例）", credit: 4, score: "92", gp: null, gpManual: false },
+    { on: true, name: "大学英语（示例）", credit: 3, score: "79", gp: null, gpManual: false }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var tbody = $("tbody");
+
+  function num(v) {
+    if (v === null || v === undefined || v === "") return NaN;
+    var n = parseFloat(v);
+    return isFinite(n) ? n : NaN;
+  }
+  function fmt(n, d) {
+    if (!isFinite(n)) return "—";
+    return n.toFixed(d === undefined ? 2 : d);
+  }
+  function trimStr(v) { return String(v === null || v === undefined ? "" : v).trim(); }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  /* ---------- 分段表 / 等级表 ---------- */
+
+  function parseSegments(text) {
+    var list = [];
+    String(text || "").split(/\r?\n/).forEach(function (line) {
+      var t = line.trim();
+      if (!t) return;
+      var m = t.split("=");
+      if (m.length < 2) { m = t.split(/[\s,，:：]+/); }
+      if (m.length < 2) return;
+      var min = num(m[0]), gp = num(m[1]);
+      if (!isFinite(min) || !isFinite(gp)) return;
+      list.push({ min: min, gp: gp });
+    });
+    list.sort(function (a, b) { return b.min - a.min; });
+    return list;
+  }
+
+  function parseLevels(text) {
+    var map = {}, order = [];
+    String(text || "").split(/\r?\n/).forEach(function (line) {
+      var t = line.trim();
+      if (!t) return;
+      var m = t.split(/[=＝\s,，:：]+/).filter(function (x) { return x !== ""; });
+      if (m.length < 2) return;
+      var name = m[0], score = num(m[1]), gp = m.length >= 3 ? num(m[2]) : NaN;
+      if (!name || !isFinite(score)) return;
+      map[name] = { name: name, score: score, gp: isFinite(gp) ? gp : null };
+      order.push(name);
+    });
+    map.__order = order;
+    return map;
+  }
+
+  function lookupLevel(raw) {
+    var map = parseLevels(state.levelText);
+    var key = trimStr(raw);
+    if (!key) return null;
+    if (map[key]) return map[key];
+    var canon = ALIAS[key];
+    if (canon && map[canon]) return map[canon];
+    /* 兜底：英文等级 */
+    var up = key.toUpperCase();
+    if (/^A\+?$/.test(up) && map["优秀"]) return map["优秀"];
+    if (/^B\+?$/.test(up) && map["良好"]) return map["良好"];
+    if (/^C\+?$/.test(up) && map["中等"]) return map["中等"];
+    if (/^D\+?$/.test(up) && map["及格"]) return map["及格"];
+    if (/^F$/.test(up) && map["不及格"]) return map["不及格"];
+    return null;
+  }
+
+  /* 一行成绩 → {score, gp, kind, label} */
+  function scoreInfo(r) {
+    var raw = trimStr(r.score);
+    if (raw === "") return { kind: "empty", score: NaN, gp: NaN };
+    if (!/[\u4e00-\u9fa5a-zA-Z]/.test(raw)) {
+      var n = num(raw);
+      return isFinite(n) ? { kind: "num", score: n, gp: NaN } : { kind: "bad", score: NaN, gp: NaN };
+    }
+    var lv = lookupLevel(raw);
+    if (lv) return { kind: "level", score: lv.score, gp: isFinite(num(lv.gp)) ? num(lv.gp) : NaN, label: lv.name };
+    return { kind: "bad", score: NaN, gp: NaN, raw: raw };
+  }
+
+  function gpFromScore(score) {
+    if (!isFinite(score)) return NaN;
+    if (state.zeroUnder && score < 60) return 0;
+    if (state.mode === "segment") {
+      var segs = parseSegments(state.segText);
+      for (var i = 0; i < segs.length; i++) {
+        if (score >= segs[i].min) return segs[i].gp;
+      }
+      return 0;
+    }
+    var b = state.pb === 0 ? 1 : state.pb;
+    var g = (score - state.pa) / b;
+    return g < 0 ? 0 : g;
+  }
+
+  /* 单科绩点 */
+  function rowGP(r, info) {
+    if (!info) info = scoreInfo(r);
+    if (r.gpManual) return num(r.gp);
+    if (info.kind === "level") return info.gp;
+    if (state.mode === "manual") return num(r.gp);
+    return gpFromScore(info.score);
+  }
+
+  function calc() {
+    var credit = 0, sCredit = 0, gCredit = 0, sp = 0, gp = 0, counted = 0, noGP = 0;
+    state.rows.forEach(function (r) {
+      if (!r.on) return;
+      var c = num(r.credit);
+      if (!isFinite(c) || c <= 0) return;
+      counted++;
+      credit += c;
+      var info = scoreInfo(r);
+      if (isFinite(info.score)) { sp += info.score * c; sCredit += c; }
+      var g = rowGP(r, info);
+      if (isFinite(g)) { gp += g * c; gCredit += c; } else noGP++;
+    });
+    return {
+      credit: credit, counted: counted, sp: sp, gp: gp,
+      sCredit: sCredit, gCredit: gCredit, noGP: noGP,
+      avg: sCredit > 0 ? sp / sCredit : NaN,
+      gpa: gCredit > 0 ? gp / gCredit : NaN
+    };
+  }
+
+  /* ---------- render ---------- */
+
+  function renderTable() {
+    var html = "";
+    state.rows.forEach(function (r, i) {
+      var info = scoreInfo(r);
+      var conv = info.kind === "level"
+        ? '<span class="conv lv">等级 → ' + fmt(info.score, 0) + ' 分</span>'
+        : (info.kind === "bad" ? '<span class="conv">无法识别</span>' : '');
+      html += '<tr class="' + (r.on ? "" : "off") + '">' +
+        '<td><input type="checkbox" data-i="' + i + '" data-f="on"' + (r.on ? " checked" : "") + ' style="width:15px;height:15px;accent-color:#2563eb"></td>' +
+        '<td><input type="text" data-i="' + i + '" data-f="name" value="' + esc(r.name) + '" placeholder="课程名称"></td>' +
+        '<td class="num"><input type="number" step="0.5" min="0" data-i="' + i + '" data-f="credit" value="' + (isFinite(num(r.credit)) ? r.credit : "") + '"></td>' +
+        '<td class="num"><input type="text" data-i="' + i + '" data-f="score" value="' + esc(r.score) + '" placeholder="88 或 良好">' + conv + '</td>' +
+        '<td class="num mono"><input type="text" class="gpinput' + (r.gpManual ? " manual" : "") + '" id="gpi-' + i + '" data-i="' + i + '" data-f="gp" value="" placeholder="自动"></td>' +
+        '<td class="num mono" id="sp-' + i + '">—</td>' +
+        '<td class="num mono" id="cp-' + i + '">—</td>' +
+        '<td><button class="del" data-del="' + i + '" title="删除">删除</button></td>' +
+        '</tr>';
+    });
+    if (!state.rows.length) {
+      html = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:26px 8px">还没有课程，点下面的「添加一行」，或用「批量粘贴」把成绩单贴进来</td></tr>';
+    }
+    tbody.innerHTML = html;
+    updateCells();
+  }
+
+  function updateCells() {
+    var res = calc();
+    state.rows.forEach(function (r, i) {
+      var info = scoreInfo(r);
+      var c = num(r.credit), s = info.score, g = rowGP(r, info);
+      var gEl = $("gpi-" + i);
+      if (gEl && !r.gpManual) gEl.value = isFinite(g) ? fmt(g) : "";
+      var spEl = $("sp-" + i);
+      if (spEl) spEl.textContent = (isFinite(c) && isFinite(s)) ? fmt(c * s, 1) : "—";
+      var cpEl = $("cp-" + i);
+      if (cpEl) cpEl.textContent = (isFinite(c) && isFinite(g)) ? fmt(c * g, 2) : "—";
+    });
+    $("fCredit").textContent = fmt(res.credit, res.credit % 1 ? 1 : 0);
+    $("fScore").textContent = fmt(res.sp, 1);
+    $("fGP").textContent = fmt(res.gp, 2);
+    $("rCredit").textContent = fmt(res.credit, res.credit % 1 ? 1 : 0);
+    $("rAvg").textContent = fmt(res.avg);
+    $("rGPA").textContent = fmt(res.gpa);
+    $("rAvgRaw").textContent = isFinite(res.avg)
+      ? "Σ(成绩×学分)=" + fmt(res.sp, 1) + " ÷ " + fmt(res.sCredit, res.sCredit % 1 ? 1 : 0) + " = " + res.avg.toFixed(4)
+      : "";
+    $("rGPARaw").textContent = isFinite(res.gpa)
+      ? "Σ(绩点×学分)=" + fmt(res.gp, 2) + " ÷ " + fmt(res.gCredit, res.gCredit % 1 ? 1 : 0) + " = " + res.gpa.toFixed(4)
+      : "";
+
+    var txt = "当前计入 <b>" + res.counted + "</b> 门课；均分按折算后的百分制成绩加权，" +
+      (state.mode === "manual" ? "绩点按你填写的单科绩点加权。" :
+        (state.mode === "linear"
+          ? "绩点按公式 <code>绩点 = (成绩 − " + state.pa + ") ÷ " + state.pb + "</code> 换算" + (state.zeroUnder ? "，60 分以下记 0。" : "。")
+          : "绩点按分段映射表换算" + (state.zeroUnder ? "，60 分以下记 0。" : "。"))) +
+      " 等级制课程按学校标准折算成百分制，绩点用等级对应的固定值。";
+    var warn = [];
+    if (res.noGP > 0) warn.push("有 " + res.noGP + " 门课还没拿到绩点，暂未计入 GPA（补考课请手填绩点）");
+    if (isFinite(res.avg) && isFinite(res.gpa) && res.sCredit !== res.gCredit) warn.push("均分与绩点的有效学分不一致，两个算式各按自己的有效学分算的");
+    if (warn.length) txt += ' <span class="warn">⚠️ ' + warn.join("；") + "。</span>";
+    $("formulaNote").innerHTML = txt;
+  }
+
+  /* ---------- helpers ---------- */
+
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      if (!s || !Array.isArray(s.rows)) return false;
+      state = s;
+      state.levelText = s.levelText || DEFAULT_LEVEL;
+      state.segText = s.segText || DEFAULT_SEG;
+      if (state.mode !== "linear" && state.mode !== "segment" && state.mode !== "manual") state.mode = "linear";
+      return true;
+    } catch (e) { return false; }
+  }
+  function syncControls() {
+    Array.prototype.forEach.call(document.querySelectorAll(".mode"), function (b) {
+      b.classList.toggle("on", b.dataset.mode === state.mode);
+    });
+    $("pa").value = state.pa;
+    $("pb").value = state.pb;
+    $("zeroUnder").checked = !!state.zeroUnder;
+    $("segText").value = state.segText;
+    $("levelText").value = state.levelText;
+    $("linearBox").style.display = state.mode === "linear" ? "flex" : "none";
+    $("segmentBox").style.display = state.mode === "segment" ? "block" : "none";
+    $("linearPreview").textContent = "现在：60 分→" + fmt(gpFromScore(60)) + "，85 分→" + fmt(gpFromScore(85)) + "，90 分→" + fmt(gpFromScore(90)) + "，100 分→" + fmt(gpFromScore(100));
+    $("modeHint").textContent =
+      state.mode === "linear" ? "南通大学（含杏林学院）用的就是这种：60 分 = 1.0，每多 1 分加 0.1，即 (成绩 − 50) ÷ 10，满分 5.0。"
+      : state.mode === "segment" ? "按分数区间查表给绩点，适合 4.0 制的学校。下面这块表可以直接改。"
+      : "成绩单上已经有单科绩点？直接在表格第 5 列填，我按你填的算。";
+    var segs = parseSegments(state.segText);
+    $("segStatus").textContent = segs.length ? ("已识别 " + segs.length + " 档：" + segs.map(function (s) { return s.min + "→" + s.gp; }).join("，")) : "⚠️ 没有识别到有效分段";
+    var levels = parseLevels(state.levelText);
+    $("levelStatus").textContent = levels.__order.length
+      ? ("已识别 " + levels.__order.length + " 个等级：" + levels.__order.map(function (k) { return k + " = " + levels[k].score + " 分 / 绩点 " + levels[k].gp; }).join("，"))
+      : "⚠️ 没有识别到有效等级，格式应为 良好=85=3.5";
+  }
+  function dismissBanner() { $("banner").style.display = "none"; }
+  function renderAll() {
+    syncControls();
+    renderTable();
+    save();
+  }
+
+  /* ---------- events ---------- */
+
+  document.getElementById("modes").addEventListener("click", function (e) {
+    var b = e.target.closest(".mode");
+    if (!b) return;
+    state.mode = b.dataset.mode;
+    syncControls(); renderTable(); save();
+  });
+
+  $("pa").addEventListener("input", function () { state.pa = num(this.value) || 0; syncControls(); updateCells(); save(); });
+  $("pb").addEventListener("input", function () { state.pb = num(this.value) || 1; syncControls(); updateCells(); save(); });
+  $("zeroUnder").addEventListener("change", function () { state.zeroUnder = this.checked; updateCells(); save(); });
+  $("segText").addEventListener("input", function () { state.segText = this.value; syncControls(); updateCells(); save(); });
+  $("levelText").addEventListener("input", function () { state.levelText = this.value; syncControls(); renderTable(); save(); });
+
+  $("btnRecalc").addEventListener("click", function () {
+    state.rows.forEach(function (r) { r.gpManual = false; r.gp = null; });
+    renderTable(); save();
+  });
+
+  tbody.addEventListener("input", function (e) {
+    var el = e.target;
+    var i = el.dataset.i, f = el.dataset.f;
+    if (i === undefined || !f) return;
+    i = +i;
+    if (!state.rows[i]) return;
+    if (f === "name") state.rows[i].name = el.value;
+    else if (f === "credit") { var v = el.value.trim(); state.rows[i].credit = v === "" ? "" : num(v); }
+    else if (f === "score") { state.rows[i].score = el.value; }
+    else if (f === "gp") {
+      var t = el.value.trim();
+      state.rows[i].gpManual = true;
+      state.rows[i].gp = t === "" ? null : num(t);
+    }
+    updateCells(); save(); dismissBanner();
+  });
+
+  tbody.addEventListener("change", function (e) {
+    if (e.target.dataset.f === "on") {
+      var i = +e.target.dataset.i;
+      if (state.rows[i]) state.rows[i].on = e.target.checked;
+      e.target.closest("tr").classList.toggle("off", !e.target.checked);
+      updateCells(); save();
+    }
+  });
+
+  tbody.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-del]");
+    if (!b) return;
+    state.rows.splice(+b.dataset.del, 1);
+    renderTable(); save();
+  });
+
+  $("btnAdd").addEventListener("click", function () {
+    state.rows.push({ on: true, name: "", credit: "", score: "", gp: null, gpManual: false });
+    renderTable(); save(); dismissBanner();
+    var inputs = tbody.querySelectorAll('input[data-f="name"]');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+
+  $("btnClear").addEventListener("click", function () {
+    state.rows = [];
+    renderTable(); save(); dismissBanner();
+  });
+
+  function parsePaste(text) {
+    var out = [], bad = 0;
+    String(text || "").split(/\r?\n/).forEach(function (line) {
+      var t = line.trim();
+      if (!t) return;
+      var parts = t.split(/\t/);
+      if (parts.length < 3) parts = t.split(/[,，;；]/);
+      if (parts.length < 3) parts = t.split(/\s+/);
+      parts = parts.map(function (p) { return p.trim(); }).filter(function (p) { return p !== ""; });
+      if (parts.length < 3) { bad++; return; }
+      var scoreRaw = parts[parts.length - 1];
+      var credit = num(parts[parts.length - 2]);
+      var name = parts.slice(0, parts.length - 2).join(" ");
+      var okScore = !/[\u4e00-\u9fa5]/.test(scoreRaw) ? isFinite(num(scoreRaw)) : !!lookupLevel(scoreRaw);
+      if (!okScore || !isFinite(credit)) { bad++; return; }
+      out.push({
+        on: true, name: name || "未命名课程", credit: credit,
+        score: /[\u4e00-\u9fa5]/.test(scoreRaw) ? scoreRaw : String(num(scoreRaw)),
+        gp: null, gpManual: false
+      });
+    });
+    return { rows: out, bad: bad };
+  }
+
+  function doImport(append) {
+    var r = parsePaste($("pasteBox").value);
+    if (!r.rows.length) {
+      $("importStatus").textContent = "⚠️ 没解析出内容，检查一下格式（每行：课程名 学分 成绩）";
+      return;
+    }
+    state.rows = append ? state.rows.concat(r.rows) : r.rows;
+    $("importStatus").textContent = "✓ 导入 " + r.rows.length + " 门课" + (r.bad ? "，跳过 " + r.bad + " 行无法识别的内容" : "");
+    renderTable(); save(); dismissBanner();
+  }
+
+  $("btnImport").addEventListener("click", function () { doImport(false); });
+  $("btnAppend").addEventListener("click", function () { doImport(true); });
+
+  /* ---------- boot ---------- */
+  if (load()) {
+    dismissBanner();
+  } else {
+    state.rows = SAMPLE.map(function (o) { return Object.assign({}, o); });
+    $("banner").style.display = "flex";
+  }
+  renderAll();
+})();
+</script>
+</body>
+</html>
